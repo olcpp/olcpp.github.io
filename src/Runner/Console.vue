@@ -34,25 +34,23 @@ onMounted(() => {
 const baseAPIs = createBaseAPIs();
 const consoleAPIs = createConsoleAPIs(xterm);
 onMounted(async () => {
-    (async () => {
-        const createModule = (await import(props.moduleUrl)).default;
-        await createModule({
-            // APIs
-            base: baseAPIs,
-            console: consoleAPIs,
-            // onExit
-            onExit(exitCode: number) {
-                xterm.writeln(`\nProgram exited with code ${exitCode}.`);
-            },
-            // stdout print() function
-            // note: even though it cannot be understood,
-            //       but when stdin is not used in a program,
-            //       it will always call print() rather than stdout.
-            /** @deprecated */
-            print(str: string) {
-                xterm.writeln(str);
-            },
-        });
-    })();
+    const createModule = (await import(props.moduleUrl)).default;
+    await createModule({
+        // APIs
+        base: baseAPIs,
+        console: consoleAPIs,
+        // onExit
+        onExit(exitCode: number) {
+            xterm.writeln(`\nProgram exited with code ${exitCode}.`);
+        },
+        // stdout print() function
+        // note: even though it cannot be understood,
+        //       but when stdin is not used in a program,
+        //       it will always call print() rather than stdout.
+        /** @deprecated */
+        print(str: string) {
+            xterm.writeln(str);
+        },
+    });
 });
 </script>
