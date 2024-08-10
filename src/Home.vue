@@ -31,10 +31,7 @@
                 </tr>
             </tbody>
         </table>
-<<<<<<< HEAD
         <a @click="runPrivate" href="javascript:void(0)">Run a private app</a>
-=======
->>>>>>> 09ea24c8b8ea3c2b183f86d27e08e77f7898a0d7
     </div>
 </template>
 
