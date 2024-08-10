@@ -31,11 +31,24 @@
                 </tr>
             </tbody>
         </table>
+<<<<<<< HEAD
+        <a @click="runPrivate" href="javascript:void(0)">Run a private app</a>
+=======
+>>>>>>> 09ea24c8b8ea3c2b183f86d27e08e77f7898a0d7
     </div>
 </template>
 
 <script setup lang="ts">
 import { useFetch } from '@vueuse/core';
+import { useRouter } from 'vue-router';
 
 const { isFinished, data } = useFetch('/apps/apps.json').json();
+const router = useRouter();
+
+function runPrivate() {
+    const id = prompt("App ID?");
+    if (id) {
+        router.push(`/run/${id}`);
+    }
+}
 </script>

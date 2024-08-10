@@ -1,5 +1,6 @@
 import { Terminal } from 'xterm';
 import wcwidth from 'wcwidth';
+import { onMounted, onUnmounted } from 'vue';
 
 function createStdioAPIs(xterm: Terminal) {
     const eventTarget = new EventTarget();
@@ -7,7 +8,14 @@ function createStdioAPIs(xterm: Terminal) {
     const stdkeyEvent = new Event('stdkey');
     let currentBuffer = new Array<number>(), inputBuffers = new Array<number>();
     let startInputPos: number | null = null;
+    let isRawMode = false;
     xterm.onData((key) => {
+        if (isRawMode) {
+            inputBuffers = inputBuffers.concat(Array.from(new TextEncoder().encode(key)));
+            eventTarget.dispatchEvent(stdinEvent);
+            eventTarget.dispatchEvent(stdkeyEvent);
+            return;
+        }
         if (key.charCodeAt(0) == 13) {
             inputBuffers = inputBuffers.concat(currentBuffer).concat(Array.from(new TextEncoder().encode('\n')));
             currentBuffer = new Array();
@@ -27,7 +35,9 @@ function createStdioAPIs(xterm: Terminal) {
                 startInputPos = xterm.buffer.active.cursorX;
             }
             currentBuffer = currentBuffer.concat(Array.from(new TextEncoder().encode(key)));
-            xterm.write(key);
+            if (key.charCodeAt(0) != 27) {
+                xterm.write(key);
+            }
         }
         eventTarget.dispatchEvent(stdkeyEvent);
     });
@@ -63,6 +73,9 @@ function createStdioAPIs(xterm: Terminal) {
         write(buffer: Array<number>) {
             xterm.write(new Uint8Array(buffer));
         },
+        raw(use: boolean) {
+            isRawMode = use;
+        },
         /** @deprecated */
         getChar() {
             return inputBuffers.shift() ?? 0;
@@ -88,10 +101,30 @@ function createDebugAPIs() {
         }
     };
 }
+function createTerminalAPIs(xterm: Terminal) {
+    const eventTarget = new EventTarget();
+    const resizeEvent = new Event('resize');
+    function onresize() {
+        eventTarget.dispatchEvent(resizeEvent);
+    }
+    onMounted(() => window.addEventListener('resize', onresize, { capture: true }));
+    onUnmounted(() => window.removeEventListener('resize', onresize, { capture: true }));
+    return {
+        getSize() {
+            return { x: xterm.cols, y: xterm.rows };
+        },
+        onResize(callback: (size: { cols: number; rows: number; }) => void) {
+            eventTarget.addEventListener('resize', () => {
+                callback({ cols: xterm.cols, rows: xterm.rows });
+            });
+        },
+    };
+}
 
 export function createConsoleAPIs(xterm: Terminal) {
     return {
         ...createStdioAPIs(xterm),
         ...createDebugAPIs(),
+        ...createTerminalAPIs(xterm),
     };
 };
